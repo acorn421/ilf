@@ -68,7 +68,7 @@ WORKDIR /
 RUN git clone https://github.com/ethereum/pyethereum.git
 WORKDIR /pyethereum
 RUN git checkout v2.3.2
-RUN python3 setup.py install
+RUN pip3 install -e .
 
 WORKDIR /go/src/ilf
 
