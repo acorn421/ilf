@@ -18,6 +18,9 @@ def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--proj", dest="proj", type=str, required=True)
     parser.add_argument("--port", dest="port", type=int, default=8545)
+    parser.add_argument(
+        "--fuzz_contract", dest="fuzz_contract", type=str, required=True
+    )
     args = parser.parse_args()
     return args
 
@@ -71,16 +74,30 @@ def run_ganache():
 
 
 def extract_transactions():
+    global args
+
     os.chdir(args.proj)
     build_path = os.path.join(args.proj, "build")
     if os.path.exists(build_path):
         shutil.rmtree(build_path)
     subprocess.call("truffle compile", shell=True)
+    generate_the_migrations(fuzz_contract=args.fuzz_contract)
     subprocess.call("truffle deploy", shell=True)
     extract_js_path = os.path.join(
         os.environ["GOPATH"], "src", "ilf", "script", "extract.js"
     )
     subprocess.call("truffle exec {}".format(extract_js_path), shell=True)
+
+
+def generate_the_migrations(fuzz_contract):
+    s = (
+        'var contract = artifacts.require("' + fuzz_contract + '"); \n'
+        "module.exports = function(deployer) {\n"
+        "   deployer.deploy(contract);\n"
+        "};\n"
+    )
+    with open(os.path.join("migrations/2_deploy_contracts.js"), "w") as f:
+        f.write(s)
 
 
 def main():
